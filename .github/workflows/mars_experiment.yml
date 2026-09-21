@@ -5,9 +5,11 @@ on:
 
 jobs:
   run-buyer-experiment:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -18,3 +20,6 @@ jobs:
 
       - name: Run MARS Experiment 001
         run: python -m experiments.test_buyer
+
+      - name: Run MARS Experiment 002
+        run: python -m experiments.test_policy_inference
