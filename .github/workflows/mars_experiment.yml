@@ -37,3 +37,6 @@ jobs:
 
       - name: Run MARS Experiment 006
         run: python -m experiments.test_adaptive_negotiation
+
+      - name: Run MARS Experiment 007
+        run: python -m experiments.test_policy_drift
