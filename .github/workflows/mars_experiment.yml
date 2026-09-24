@@ -40,3 +40,6 @@ jobs:
 
       - name: Run MARS Experiment 007
         run: python -m experiments.test_policy_drift
+
+      - name: Run MARS Experiment 008
+        run: python -m experiments.test_deal_rescue
