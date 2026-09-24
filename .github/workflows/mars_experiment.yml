@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
+
   run-buyer-experiment:
 
     runs-on: ubuntu-latest
@@ -15,6 +16,7 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
+
         with:
           python-version: '3.11'
 
@@ -23,3 +25,6 @@ jobs:
 
       - name: Run MARS Experiment 002
         run: python -m experiments.test_policy_inference
+
+      - name: Run MARS Experiment 003
+        run: python -m experiments.test_multidimensional_inference
