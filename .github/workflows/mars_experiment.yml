@@ -31,3 +31,6 @@ jobs:
 
       - name: Run MARS Experiment 004
         run: python -m experiments.test_minimum_intervention
+
+      - name: Run MARS Experiment 005
+        run: python -m experiments.test_negotiation
