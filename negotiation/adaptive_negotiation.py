@@ -14,6 +14,9 @@ commercial proposals.
 
 The supplier does not access the buyer's
 hidden internal purchasing policy.
+
+Version:
+Corrected negotiation memory persistence.
 """
 
 from dataclasses import replace
@@ -54,7 +57,35 @@ class NegotiationMemoryEngine:
 
             return False
 
-        learned_requirements = {}
+        # --------------------------------------------------
+        # RETRIEVE EXISTING BUYER MEMORY
+        # --------------------------------------------------
+
+        # Important:
+        # Previously learned buyer requirements must
+        # survive subsequent successful negotiations.
+        #
+        # A negotiation with zero counteroffers must
+        # not erase historical commercial intelligence.
+
+        previous_memory = self.buyer_memories.get(
+            buyer_id,
+            {}
+        )
+
+        learned_requirements = previous_memory.get(
+            "learned_requirements",
+            {}
+        ).copy()
+
+        # Count only new observations from this
+        # particular negotiation.
+
+        new_observations = 0
+
+        # --------------------------------------------------
+        # LEARN FROM BUYER COUNTEROFFERS
+        # --------------------------------------------------
 
         for event in negotiation_result["history"]:
 
@@ -76,11 +107,17 @@ class NegotiationMemoryEngine:
                 "requested_value"
             ]
 
+            # Update the buyer's learned requirement.
+
             learned_requirements[
                 variable
             ] = requested_value
 
-        # Store information against the buyer identity.
+            new_observations += 1
+
+        # --------------------------------------------------
+        # UPDATE PERSISTENT BUYER MEMORY
+        # --------------------------------------------------
 
         self.buyer_memories[buyer_id] = {
 
@@ -104,17 +141,35 @@ class NegotiationMemoryEngine:
 
         }
 
-        self.total_learned_interventions += len(
-            learned_requirements
+        self.total_learned_interventions += (
+            new_observations
         )
+
+        # --------------------------------------------------
+        # DISPLAY MEMORY UPDATE
+        # --------------------------------------------------
 
         print("\nNEGOTIATION MEMORY UPDATED")
 
-        print(f"Buyer: {buyer_id}")
+        print("=" * 60)
 
         print(
-            f"Learned interventions: "
+            f"Buyer: {buyer_id}"
+        )
+
+        print(
+            f"New observations: "
+            f"{new_observations}"
+        )
+
+        print(
+            f"Total remembered requirements: "
             f"{len(learned_requirements)}"
+        )
+
+        print(
+            f"Total learned interventions: "
+            f"{self.total_learned_interventions}"
         )
 
         for variable, value in (
@@ -131,7 +186,10 @@ class NegotiationMemoryEngine:
     # RETRIEVE BUYER MEMORY
     # --------------------------------------------------
 
-    def retrieve_memory(self, buyer_id):
+    def retrieve_memory(
+        self,
+        buyer_id
+    ):
 
         return self.buyer_memories.get(
             buyer_id
@@ -141,7 +199,10 @@ class NegotiationMemoryEngine:
     # CHECK WHETHER BUYER IS KNOWN
     # --------------------------------------------------
 
-    def has_memory(self, buyer_id):
+    def has_memory(
+        self,
+        buyer_id
+    ):
 
         return buyer_id in self.buyer_memories
 
@@ -195,6 +256,10 @@ class AdaptiveSupplierAgent(
             self.buyer_id
         )
 
+        # --------------------------------------------------
+        # UNKNOWN BUYER
+        # --------------------------------------------------
+
         if memory is None:
 
             print(
@@ -213,6 +278,10 @@ class AdaptiveSupplierAgent(
             "learned_requirements"
         ]
 
+        # --------------------------------------------------
+        # BUILD ADAPTIVE PROPOSAL
+        # --------------------------------------------------
+
         candidate = self.original_proposal
 
         # Apply previously accepted commercial
@@ -230,7 +299,9 @@ class AdaptiveSupplierAgent(
 
             )
 
-        # Protect supplier minimum price.
+        # --------------------------------------------------
+        # PROTECT SUPPLIER MINIMUM PRICE
+        # --------------------------------------------------
 
         if (
             candidate.annual_price <
@@ -244,7 +315,9 @@ class AdaptiveSupplierAgent(
 
             return self.current_proposal
 
-        # Protect supplier concession budget.
+        # --------------------------------------------------
+        # PROTECT SUPPLIER CONCESSION BUDGET
+        # --------------------------------------------------
 
         estimated_cost = self.calculate_cost(
             candidate
@@ -261,6 +334,10 @@ class AdaptiveSupplierAgent(
             )
 
             return self.current_proposal
+
+        # --------------------------------------------------
+        # APPLY LEARNED COMMERCIAL STRATEGY
+        # --------------------------------------------------
 
         self.current_proposal = candidate
 
@@ -283,6 +360,11 @@ class AdaptiveSupplierAgent(
         print(
             f"Service availability: "
             f"{candidate.service_availability}%"
+        )
+
+        print(
+            f"Supplier reliability: "
+            f"{candidate.supplier_reliability}%"
         )
 
         print(
