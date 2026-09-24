@@ -44,5 +44,8 @@ jobs:
       - name: Run MARS Experiment 008
         run: python -m experiments.test_deal_rescue
 
+      - name: Run MARS Experiment 010
+        run: python -m experiments.test_adversarial_negotiation
+
       - name: Run MARS Experiment 009
         run: python -m experiments.test_commercial_learning
