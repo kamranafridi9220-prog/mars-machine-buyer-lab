@@ -4,15 +4,19 @@ on:
   workflow_dispatch:
 
 jobs:
+
   run-buyer-experiment:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
+
         with:
           python-version: '3.11'
 
@@ -24,3 +28,6 @@ jobs:
 
       - name: Run MARS Experiment 003
         run: python -m experiments.test_multidimensional_inference
+
+      - name: Run MARS Experiment 004
+        run: python -m experiments.test_minimum_intervention
