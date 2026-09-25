@@ -4,13 +4,9 @@ MARS — Machine-Agent Revenue Science
 Experiment 011
 
 Autonomous AI Supplier Strategy Experiment
+Version 2 — Adaptive Strategy Memory
 
 Author: Kamran Khan
-
-Purpose:
-Evaluate whether an AI supplier can improve
-commercial proposals using observable buyer
-feedback while respecting supplier constraints.
 """
 
 from buyer_lab.buyer_agent import (
@@ -72,21 +68,61 @@ MAX_ROUNDS = 5
 
 agreement = False
 
+buyer_evaluations = 0
+
+accepted_strategies = 0
+
+rejected_strategies = 0
+
 
 print("\n" + "=" * 65)
 
 print("MARS — EXPERIMENT 011")
 
-print("AUTONOMOUS AI SUPPLIER STRATEGY")
+print("ADAPTIVE AI SUPPLIER STRATEGY")
 
 print("=" * 65)
 
 
 # ==================================================
-# AUTONOMOUS COMMERCIAL NEGOTIATION
+# INITIAL BUYER EVALUATION
+# ==================================================
+
+buyer_response = buyer.evaluate_proposal(
+
+    supplier.current_proposal
+
+)
+
+buyer_evaluations += 1
+
+supplier.record_buyer_feedback(
+
+    supplier.current_proposal,
+
+    buyer_response
+
+)
+
+print("\nINITIAL BUYER DECISION")
+
+print(buyer_response["decision"])
+
+
+if buyer_response["decision"] == "ACCEPTED":
+
+    agreement = True
+
+
+# ==================================================
+# AUTONOMOUS AI NEGOTIATION
 # ==================================================
 
 for round_number in range(1, MAX_ROUNDS + 1):
+
+    if agreement:
+
+        break
 
     print(
 
@@ -96,19 +132,75 @@ for round_number in range(1, MAX_ROUNDS + 1):
 
     print("-" * 65)
 
-    current_proposal = supplier.current_proposal
+    print("\nCURRENT PROPOSAL")
 
-    print("\nCURRENT COMMERCIAL PROPOSAL")
-
-    print(current_proposal)
+    print(supplier.current_proposal)
 
     # ----------------------------------------------
-    # BUYER EVALUATES PROPOSAL
+    # GENERATE AI STRATEGY
+    # ----------------------------------------------
+
+    print("\nAI SUPPLIER GENERATING STRATEGY...")
+
+    strategy = supplier.generate_strategy(
+
+        buyer_feedback=buyer_response
+
+    )
+
+    print("\nAI STRATEGY REASONING")
+
+    print(strategy["reasoning"])
+
+    print("\nPROPOSED STRATEGY")
+
+    print(strategy["candidate"])
+
+    # ----------------------------------------------
+    # COMMERCIAL VALIDATION
+    # ----------------------------------------------
+
+    validation = strategy["validation"]
+
+    if not validation["valid"]:
+
+        rejected_strategies += 1
+
+        print("\nSTRATEGY REJECTED")
+
+        print(validation["reason"])
+
+        continue
+
+    accepted_strategies += 1
+
+    print("\nSTRATEGY COMMERCIALLY APPROVED")
+
+    print(
+
+        "Intervention Cost: £"
+
+        f"{validation['cost']:,.2f}"
+
+    )
+
+    # ----------------------------------------------
+    # BUYER EVALUATES AI PROPOSAL
     # ----------------------------------------------
 
     buyer_response = buyer.evaluate_proposal(
 
-        current_proposal
+        supplier.current_proposal
+
+    )
+
+    buyer_evaluations += 1
+
+    supplier.record_buyer_feedback(
+
+        supplier.current_proposal,
+
+        buyer_response
 
     )
 
@@ -126,75 +218,7 @@ for round_number in range(1, MAX_ROUNDS + 1):
 
         print("\nCOMMERCIAL AGREEMENT REACHED")
 
-        print(
-
-            "Final Annual Price: £"
-
-            f"{current_proposal.annual_price:,.2f}"
-
-        )
-
-        print(
-
-            "Total Intervention Cost: £"
-
-            f"{supplier.calculate_cost(current_proposal):,.2f}"
-
-        )
-
         break
-
-    # ----------------------------------------------
-    # AI SUPPLIER GENERATES NEW STRATEGY
-    # ----------------------------------------------
-
-    print("\nAI SUPPLIER GENERATING STRATEGY...")
-
-    strategy = supplier.generate_strategy(
-
-        buyer_feedback=buyer_response
-
-    )
-
-    print("\nAI STRATEGY REASONING")
-
-    print(strategy["reasoning"])
-
-    print("\nPROPOSED COMMERCIAL STRATEGY")
-
-    print(strategy["candidate"])
-
-    # ----------------------------------------------
-    # VALIDATE COMMERCIAL STRATEGY
-    # ----------------------------------------------
-
-    validation = strategy["validation"]
-
-    if validation["valid"]:
-
-        print("\nSTRATEGY APPROVED")
-
-        print(
-
-            "Estimated Intervention Cost: £"
-
-            f"{validation['cost']:,.2f}"
-
-        )
-
-    else:
-
-        print("\nSTRATEGY REJECTED")
-
-        print(validation["reason"])
-
-        print(
-
-            "\nAI supplier will attempt "
-
-            "another strategy."
-
-        )
 
 
 # ==================================================
@@ -227,9 +251,49 @@ print(
 
 print(
 
+    "Remaining Intervention Budget: £"
+
+    f"{supplier.remaining_budget():,.2f}"
+
+)
+
+print(
+
     "AI Strategies Generated:",
 
     len(supplier.strategy_history)
+
+)
+
+print(
+
+    "Commercially Approved Strategies:",
+
+    accepted_strategies
+
+)
+
+print(
+
+    "Commercially Rejected Strategies:",
+
+    rejected_strategies
+
+)
+
+print(
+
+    "Buyer Evaluations:",
+
+    buyer_evaluations
+
+)
+
+print(
+
+    "Buyer Feedback Records:",
+
+    len(supplier.buyer_feedback_history)
 
 )
 
