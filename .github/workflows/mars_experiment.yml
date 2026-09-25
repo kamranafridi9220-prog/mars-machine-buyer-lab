@@ -20,6 +20,19 @@ jobs:
         with:
           python-version: '3.11'
 
+      # ==========================================
+      # INSTALL AI DEPENDENCIES
+      # ==========================================
+
+      - name: Install OpenAI Python SDK
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install openai
+
+      # ==========================================
+      # EXISTING MARS EXPERIMENTS
+      # ==========================================
+
       - name: Run MARS Experiment 001
         run: python -m experiments.test_buyer
 
@@ -49,3 +62,13 @@ jobs:
 
       - name: Run MARS Experiment 010
         run: python -m experiments.test_adversarial_negotiation
+
+      # ==========================================
+      # EXPERIMENT 011 — GENERATIVE AI SUPPLIER
+      # ==========================================
+
+      - name: Run MARS Experiment 011
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+        run: python -m experiments.test_ai_supplier_strategy
