@@ -4,10 +4,25 @@ MARS — Machine-Agent Revenue Science
 Experiment 011
 
 Autonomous AI Supplier Strategy Experiment
-Version 2 — Adaptive Strategy Memory
+
+Version 3:
+Feasible vs Infeasible Commercial Negotiation
 
 Author: Kamran Khan
+
+Research Objective:
+Investigate how an autonomous AI supplier adapts
+commercial negotiation strategies under different
+supplier-side intervention budgets.
+
+Scenario A:
+Commercially feasible negotiation.
+
+Scenario B:
+Commercially infeasible negotiation.
 """
+
+from dataclasses import asdict
 
 from buyer_lab.buyer_agent import (
     AutonomousBuyerAgent,
@@ -20,173 +35,116 @@ from negotiation.ai_supplier_strategy_agent import (
 
 
 # ==================================================
-# INITIALISE AUTONOMOUS BUYER
+# EXPERIMENT CONFIGURATION
 # ==================================================
 
-buyer = AutonomousBuyerAgent()
+MAX_ROUNDS = 5
+
+MINIMUM_ANNUAL_PRICE = 100000
 
 
 # ==================================================
 # INITIAL COMMERCIAL PROPOSAL
 # ==================================================
 
-initial_proposal = CommercialProposal(
+def create_initial_proposal():
 
-    annual_price=120000,
+    return CommercialProposal(
 
-    contract_months=48,
+        annual_price=120000,
 
-    service_availability=95.0,
+        contract_months=48,
 
-    payment_days=15,
+        service_availability=95.0,
 
-    supplier_reliability=80.0
+        payment_days=15,
 
-)
+        supplier_reliability=80.0
 
-
-# ==================================================
-# INITIALISE AI SUPPLIER
-# ==================================================
-
-supplier = AISupplierStrategyAgent(
-
-    original_proposal=initial_proposal,
-
-    maximum_intervention_cost=25000,
-
-    minimum_annual_price=100000
-
-)
+    )
 
 
 # ==================================================
-# EXPERIMENT CONFIGURATION
+# RUN AUTONOMOUS NEGOTIATION SCENARIO
 # ==================================================
 
-MAX_ROUNDS = 5
+def run_negotiation_scenario(
 
-agreement = False
+    scenario_name,
 
-buyer_evaluations = 0
+    maximum_intervention_cost
 
-accepted_strategies = 0
+):
 
-rejected_strategies = 0
+    print("\n" + "=" * 70)
 
+    print("MARS — EXPERIMENT 011")
 
-print("\n" + "=" * 65)
+    print(scenario_name)
 
-print("MARS — EXPERIMENT 011")
-
-print("ADAPTIVE AI SUPPLIER STRATEGY")
-
-print("=" * 65)
-
-
-# ==================================================
-# INITIAL BUYER EVALUATION
-# ==================================================
-
-buyer_response = buyer.evaluate_proposal(
-
-    supplier.current_proposal
-
-)
-
-buyer_evaluations += 1
-
-supplier.record_buyer_feedback(
-
-    supplier.current_proposal,
-
-    buyer_response
-
-)
-
-print("\nINITIAL BUYER DECISION")
-
-print(buyer_response["decision"])
-
-
-if buyer_response["decision"] == "ACCEPTED":
-
-    agreement = True
-
-
-# ==================================================
-# AUTONOMOUS AI NEGOTIATION
-# ==================================================
-
-for round_number in range(1, MAX_ROUNDS + 1):
-
-    if agreement:
-
-        break
+    print("=" * 70)
 
     print(
 
-        f"\nNEGOTIATION ROUND {round_number}"
+        "\nMaximum Intervention Budget: £"
+
+        f"{maximum_intervention_cost:,.2f}"
 
     )
-
-    print("-" * 65)
-
-    print("\nCURRENT PROPOSAL")
-
-    print(supplier.current_proposal)
-
-    # ----------------------------------------------
-    # GENERATE AI STRATEGY
-    # ----------------------------------------------
-
-    print("\nAI SUPPLIER GENERATING STRATEGY...")
-
-    strategy = supplier.generate_strategy(
-
-        buyer_feedback=buyer_response
-
-    )
-
-    print("\nAI STRATEGY REASONING")
-
-    print(strategy["reasoning"])
-
-    print("\nPROPOSED STRATEGY")
-
-    print(strategy["candidate"])
-
-    # ----------------------------------------------
-    # COMMERCIAL VALIDATION
-    # ----------------------------------------------
-
-    validation = strategy["validation"]
-
-    if not validation["valid"]:
-
-        rejected_strategies += 1
-
-        print("\nSTRATEGY REJECTED")
-
-        print(validation["reason"])
-
-        continue
-
-    accepted_strategies += 1
-
-    print("\nSTRATEGY COMMERCIALLY APPROVED")
 
     print(
 
-        "Intervention Cost: £"
+        "Minimum Annual Price: £"
 
-        f"{validation['cost']:,.2f}"
+        f"{MINIMUM_ANNUAL_PRICE:,.2f}"
 
     )
 
-    # ----------------------------------------------
-    # BUYER EVALUATES AI PROPOSAL
-    # ----------------------------------------------
+    # --------------------------------------------------
+    # INITIALISE INDEPENDENT BUYER
+    # --------------------------------------------------
+
+    buyer = AutonomousBuyerAgent()
+
+    # --------------------------------------------------
+    # INITIALISE COMMERCIAL PROPOSAL
+    # --------------------------------------------------
+
+    initial_proposal = create_initial_proposal()
+
+    # --------------------------------------------------
+    # INITIALISE INDEPENDENT AI SUPPLIER
+    # --------------------------------------------------
+
+    supplier = AISupplierStrategyAgent(
+
+        original_proposal=initial_proposal,
+
+        maximum_intervention_cost=(
+            maximum_intervention_cost
+        ),
+
+        minimum_annual_price=(
+            MINIMUM_ANNUAL_PRICE
+        )
+
+    )
+
+    # --------------------------------------------------
+    # EXPERIMENT METRICS
+    # --------------------------------------------------
+
+    agreement = False
+
+    buyer_evaluations = 0
+
+    approved_strategies = 0
+
+    rejected_strategies = 0
+
+    # --------------------------------------------------
+    # INITIAL BUYER EVALUATION
+    # --------------------------------------------------
 
     buyer_response = buyer.evaluate_proposal(
 
@@ -204,97 +162,348 @@ for round_number in range(1, MAX_ROUNDS + 1):
 
     )
 
-    print("\nBUYER DECISION")
+    print("\nINITIAL COMMERCIAL PROPOSAL")
+
+    print(initial_proposal)
+
+    print("\nINITIAL BUYER DECISION")
 
     print(buyer_response["decision"])
-
-    # ----------------------------------------------
-    # AGREEMENT REACHED
-    # ----------------------------------------------
 
     if buyer_response["decision"] == "ACCEPTED":
 
         agreement = True
 
-        print("\nCOMMERCIAL AGREEMENT REACHED")
+    # ==================================================
+    # AUTONOMOUS AI NEGOTIATION
+    # ==================================================
 
-        break
+    for round_number in range(
+
+        1,
+
+        MAX_ROUNDS + 1
+
+    ):
+
+        if agreement:
+
+            break
+
+        print("\n" + "-" * 70)
+
+        print(
+
+            f"AI NEGOTIATION ROUND {round_number}"
+
+        )
+
+        print("-" * 70)
+
+        print("\nCURRENT COMMERCIAL PROPOSAL")
+
+        print(supplier.current_proposal)
+
+        print(
+
+            "\nREMAINING INTERVENTION BUDGET: £"
+
+            f"{supplier.remaining_budget():,.2f}"
+
+        )
+
+        # ----------------------------------------------
+        # GENERATE AI COMMERCIAL STRATEGY
+        # ----------------------------------------------
+
+        print("\nAI SUPPLIER GENERATING STRATEGY...")
+
+        strategy = supplier.generate_strategy(
+
+            buyer_feedback=buyer_response
+
+        )
+
+        print("\nAI STRATEGY REASONING")
+
+        print(strategy["reasoning"])
+
+        print("\nAI PROPOSED COMMERCIAL STRATEGY")
+
+        print(strategy["candidate"])
+
+        # ----------------------------------------------
+        # COMMERCIAL VALIDATION
+        # ----------------------------------------------
+
+        validation = strategy["validation"]
+
+        if not validation["valid"]:
+
+            rejected_strategies += 1
+
+            print("\nSTRATEGY COMMERCIALLY REJECTED")
+
+            print(validation["reason"])
+
+            print(
+
+                "\nAI will use this failure "
+
+                "in its next strategy attempt."
+
+            )
+
+            continue
+
+        # ----------------------------------------------
+        # APPROVED COMMERCIAL STRATEGY
+        # ----------------------------------------------
+
+        approved_strategies += 1
+
+        print("\nSTRATEGY COMMERCIALLY APPROVED")
+
+        print(
+
+            "Intervention Cost: £"
+
+            f"{validation['cost']:,.2f}"
+
+        )
+
+        print(
+
+            "Remaining Budget: £"
+
+            f"{supplier.remaining_budget():,.2f}"
+
+        )
+
+        # ----------------------------------------------
+        # BUYER EVALUATES REVISED PROPOSAL
+        # ----------------------------------------------
+
+        buyer_response = buyer.evaluate_proposal(
+
+            supplier.current_proposal
+
+        )
+
+        buyer_evaluations += 1
+
+        supplier.record_buyer_feedback(
+
+            supplier.current_proposal,
+
+            buyer_response
+
+        )
+
+        print("\nBUYER DECISION")
+
+        print(buyer_response["decision"])
+
+        # ----------------------------------------------
+        # AGREEMENT REACHED
+        # ----------------------------------------------
+
+        if buyer_response["decision"] == "ACCEPTED":
+
+            agreement = True
+
+            print("\nCOMMERCIAL AGREEMENT REACHED")
+
+            print(
+
+                "Final Annual Price: £"
+
+                f"{supplier.current_proposal.annual_price:,.2f}"
+
+            )
+
+            print(
+
+                "Total Intervention Cost: £"
+
+                f"{supplier.calculate_cost(supplier.current_proposal):,.2f}"
+
+            )
+
+            break
+
+    # ==================================================
+    # FINAL SCENARIO RESULTS
+    # ==================================================
+
+    final_proposal = supplier.current_proposal
+
+    final_cost = supplier.calculate_cost(
+
+        final_proposal
+
+    )
+
+    result = {
+
+        "scenario": scenario_name,
+
+        "maximum_intervention_cost": (
+            maximum_intervention_cost
+        ),
+
+        "agreement": agreement,
+
+        "final_proposal": asdict(
+            final_proposal
+        ),
+
+        "total_intervention_cost": (
+            final_cost
+        ),
+
+        "remaining_budget": (
+            supplier.remaining_budget()
+        ),
+
+        "strategies_generated": (
+            len(supplier.strategy_history)
+        ),
+
+        "approved_strategies": (
+            approved_strategies
+        ),
+
+        "rejected_strategies": (
+            rejected_strategies
+        ),
+
+        "buyer_evaluations": (
+            buyer_evaluations
+        ),
+
+        "buyer_feedback_records": (
+            len(supplier.buyer_feedback_history)
+        )
+
+    }
+
+    print("\n" + "=" * 70)
+
+    print("SCENARIO RESULTS")
+
+    print("=" * 70)
+
+    for key, value in result.items():
+
+        print(
+
+            f"{key}: {value}"
+
+        )
+
+    return result
 
 
 # ==================================================
-# FINAL EXPERIMENT RESULTS
+# SCENARIO A — FEASIBLE NEGOTIATION
 # ==================================================
 
-print("\n" + "=" * 65)
+scenario_a = run_negotiation_scenario(
 
-print("EXPERIMENT 011 RESULTS")
+    scenario_name=(
+        "SCENARIO A — FEASIBLE NEGOTIATION"
+    ),
 
-print("=" * 65)
+    maximum_intervention_cost=35000
 
-print("Agreement Reached:", agreement)
+)
+
+
+# ==================================================
+# SCENARIO B — INFEASIBLE NEGOTIATION
+# ==================================================
+
+scenario_b = run_negotiation_scenario(
+
+    scenario_name=(
+        "SCENARIO B — INFEASIBLE NEGOTIATION"
+    ),
+
+    maximum_intervention_cost=25000
+
+)
+
+
+# ==================================================
+# COMPARATIVE EXPERIMENT RESULTS
+# ==================================================
+
+print("\n" + "=" * 70)
+
+print("MARS — EXPERIMENT 011")
+
+print("COMPARATIVE EXPERIMENT RESULTS")
+
+print("=" * 70)
+
+
+print("\nSCENARIO A — FEASIBLE")
 
 print(
 
-    "Final Commercial Proposal:",
+    "Agreement Reached:",
 
-    supplier.current_proposal
+    scenario_a["agreement"]
 
 )
 
 print(
 
-    "Total Intervention Cost: £"
+    "Strategies Generated:",
 
-    f"{supplier.calculate_cost(supplier.current_proposal):,.2f}"
-
-)
-
-print(
-
-    "Remaining Intervention Budget: £"
-
-    f"{supplier.remaining_budget():,.2f}"
+    scenario_a["strategies_generated"]
 
 )
 
 print(
 
-    "AI Strategies Generated:",
+    "Intervention Cost: £"
 
-    len(supplier.strategy_history)
+    f"{scenario_a['total_intervention_cost']:,.2f}"
+
+)
+
+
+print("\nSCENARIO B — INFEASIBLE")
+
+print(
+
+    "Agreement Reached:",
+
+    scenario_b["agreement"]
 
 )
 
 print(
 
-    "Commercially Approved Strategies:",
+    "Strategies Generated:",
 
-    accepted_strategies
-
-)
-
-print(
-
-    "Commercially Rejected Strategies:",
-
-    rejected_strategies
+    scenario_b["strategies_generated"]
 
 )
 
 print(
 
-    "Buyer Evaluations:",
+    "Intervention Cost: £"
 
-    buyer_evaluations
-
-)
-
-print(
-
-    "Buyer Feedback Records:",
-
-    len(supplier.buyer_feedback_history)
+    f"{scenario_b['total_intervention_cost']:,.2f}"
 
 )
 
-print("=" * 65)
+
+print("\n" + "=" * 70)
+
+print("EXPERIMENT 011 COMPLETED")
+
+print("=" * 70)
