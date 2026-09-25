@@ -69,6 +69,11 @@ jobs:
 
       - name: Run MARS Experiment 011
         env:
+
+      - name: Run MARS Experiment 012
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python -m experiments.test_active_policy_discovery
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
         run: python -m experiments.test_ai_supplier_strategy
