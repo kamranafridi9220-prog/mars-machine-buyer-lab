@@ -131,3 +131,11 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python -m experiments.test_active_policy_discovery
+
+      # ==========================================
+      # EXPERIMENT 013
+      # AUTONOMOUS EXPERIMENT SELECTION
+      # ==========================================
+
+      - name: Run MARS Experiment 013
+        run: python -m experiments.test_autonomous_experiment_selection
