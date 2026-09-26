@@ -11,66 +11,123 @@ jobs:
 
     steps:
 
+      # ==========================================
+      # SETUP
+      # ==========================================
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
-
         with:
           python-version: '3.11'
 
       # ==========================================
-      # INSTALL AI DEPENDENCIES
+      # INSTALL DEPENDENCIES
       # ==========================================
 
-      - name: Install OpenAI Python SDK
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install openai
 
       # ==========================================
-      # EXISTING MARS EXPERIMENTS
+      # EXPERIMENT 001
+      # AUTONOMOUS BUYER LABORATORY
       # ==========================================
 
       - name: Run MARS Experiment 001
         run: python -m experiments.test_buyer
 
+      # ==========================================
+      # EXPERIMENT 002
+      # BLACK-BOX BUYER POLICY INFERENCE
+      # ==========================================
+
       - name: Run MARS Experiment 002
         run: python -m experiments.test_policy_inference
+
+      # ==========================================
+      # EXPERIMENT 003
+      # MULTI-DIMENSIONAL POLICY INFERENCE
+      # ==========================================
 
       - name: Run MARS Experiment 003
         run: python -m experiments.test_multidimensional_inference
 
+      # ==========================================
+      # EXPERIMENT 004
+      # MINIMUM WINNING INTERVENTION
+      # ==========================================
+
       - name: Run MARS Experiment 004
         run: python -m experiments.test_minimum_intervention
+
+      # ==========================================
+      # EXPERIMENT 005
+      # AUTONOMOUS NEGOTIATION
+      # ==========================================
 
       - name: Run MARS Experiment 005
         run: python -m experiments.test_negotiation
 
+      # ==========================================
+      # EXPERIMENT 006
+      # ADAPTIVE NEGOTIATION
+      # ==========================================
+
       - name: Run MARS Experiment 006
         run: python -m experiments.test_adaptive_negotiation
+
+      # ==========================================
+      # EXPERIMENT 007
+      # BUYER POLICY DRIFT
+      # ==========================================
 
       - name: Run MARS Experiment 007
         run: python -m experiments.test_policy_drift
 
+      # ==========================================
+      # EXPERIMENT 008
+      # AUTONOMOUS DEAL RESCUE
+      # ==========================================
+
       - name: Run MARS Experiment 008
         run: python -m experiments.test_deal_rescue
 
+      # ==========================================
+      # EXPERIMENT 009
+      # CONTEXTUAL COMMERCIAL LEARNING
+      # ==========================================
+
       - name: Run MARS Experiment 009
         run: python -m experiments.test_commercial_learning
+
+      # ==========================================
+      # EXPERIMENT 010
+      # ADVERSARIAL NEGOTIATION
+      # ==========================================
 
       - name: Run MARS Experiment 010
         run: python -m experiments.test_adversarial_negotiation
 
       # ==========================================
-      # EXPERIMENT 011 — GENERATIVE AI SUPPLIER
+      # EXPERIMENT 011
+      # AUTONOMOUS AI SUPPLIER STRATEGY
       # ==========================================
 
       - name: Run MARS Experiment 011
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python -m experiments.test_ai_supplier_strategy
+
+      # ==========================================
+      # EXPERIMENT 012
+      # ACTIVE BUYER POLICY DISCOVERY
+      # ==========================================
 
       - name: Run MARS Experiment 012
         env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: python -m experiments.test_ai_supplier_strategy
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python -m experiments.test_active_policy_discovery
