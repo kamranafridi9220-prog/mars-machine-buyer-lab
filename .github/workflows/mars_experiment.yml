@@ -139,3 +139,10 @@ jobs:
 
       - name: Run MARS Experiment 013
         run: python -m experiments.test_autonomous_experiment_selection
+      # ==========================================
+      # EXPERIMENT 014
+      # COMPARATIVE POLICY DISCOVERY BENCHMARK
+      # ==========================================
+
+      - name: Run MARS Experiment 014
+        run: python -m experiments.test_policy_discovery_benchmark
