@@ -15,20 +15,16 @@ noise-strength parameter.
 
 The controller receives observable behavioural evidence
 from the BuyerEnvironmentEstimator and maps that evidence
-to the learned sampling policies established in
-Experiment 021.
+to the learned sampling policies established by the
+MetaPolicyLearningEngine.
 
-This creates a closed black-box decision loop:
+Important:
+The MetaPolicyLearningEngine stores learned environment
+results in `environment_statistics`.
 
-Buyer observations
-    ->
-Behavioural instability estimate
-    ->
-Environment classification
-    ->
-Evidence-acquisition policy selection
-    ->
-Policy discovery
+The controller therefore reads the trained noise regimes
+from that structure rather than expecting a separate
+`learned_policy` attribute.
 """
 
 
@@ -54,22 +50,41 @@ class DynamicMetaPolicyController:
         self
     ):
 
-        learned_policy = getattr(
+        environment_statistics = getattr(
             self.meta_policy_engine,
-            "learned_policy",
+            "environment_statistics",
             None
         )
 
-        if not learned_policy:
+        if not environment_statistics:
 
             raise ValueError(
-                "Meta-policy engine has no learned policy. "
-                "Train the meta-policy before dynamic selection."
+                "Meta-policy engine has no learned "
+                "environment statistics. "
+                "Run learn_meta_policy() before "
+                "dynamic selection."
+            )
+
+        regimes = []
+
+        for noise_level in (
+            environment_statistics.keys()
+        ):
+
+            regimes.append(
+                float(
+                    noise_level
+                )
+            )
+
+        if not regimes:
+
+            raise ValueError(
+                "No trained noise regimes are available."
             )
 
         return sorted(
-            float(noise)
-            for noise in learned_policy.keys()
+            regimes
         )
 
 
@@ -94,13 +109,15 @@ class DynamicMetaPolicyController:
             regimes
         )
 
+        estimated_noise = float(
+            estimated_noise
+        )
+
         return max(
             minimum_noise,
             min(
                 maximum_noise,
-                float(
-                    estimated_noise
-                )
+                estimated_noise
             )
         )
 
@@ -143,8 +160,8 @@ class DynamicMetaPolicyController:
     # CLASSIFY ENVIRONMENT
     # ========================================================
 
+    @staticmethod
     def classify_environment(
-        self,
         estimated_noise
     ):
 
@@ -205,7 +222,10 @@ class DynamicMetaPolicyController:
 
         interval_component = max(
             0.0,
-            1.0 - ci_width
+            min(
+                1.0,
+                1.0 - ci_width
+            )
         )
 
         observation_component = min(
@@ -243,7 +263,9 @@ class DynamicMetaPolicyController:
         environment_result
     ):
 
-        if "estimated_noise" not in environment_result:
+        if "estimated_noise" not in (
+            environment_result
+        ):
 
             raise ValueError(
                 "Environment result does not contain "
@@ -273,6 +295,18 @@ class DynamicMetaPolicyController:
                 environment_result
             )
         )
+
+        # ----------------------------------------------------
+        # IMPORTANT
+        #
+        # select_policy() belongs to the Experiment 021
+        # MetaPolicyLearningEngine.
+        #
+        # It chooses the learned policy associated with
+        # the nearest trained noise environment.
+        #
+        # The TRUE simulator noise is never passed here.
+        # ----------------------------------------------------
 
         selection = (
             self.meta_policy_engine.select_policy(
@@ -313,7 +347,12 @@ class DynamicMetaPolicyController:
                 selected_policy.maximum_observations,
 
             "confidence_level":
-                selected_policy.confidence_level
+                selected_policy.confidence_level,
+
+            "training_objective_cost":
+                selection.get(
+                    "training_objective_cost"
+                )
         }
 
         self.selection_history.append(
@@ -398,7 +437,10 @@ class DynamicMetaPolicyController:
                     0,
 
                 "current_policy":
-                    None
+                    None,
+
+                "history":
+                    []
             }
 
         policy_changes = 0
@@ -463,13 +505,19 @@ class DynamicMetaPolicyController:
         result
     ):
 
-        print("\n" + "=" * 80)
+        print(
+            "\n"
+            +
+            "=" * 80
+        )
 
         print(
             "MARS — DYNAMIC META-POLICY DECISION"
         )
 
-        print("=" * 80)
+        print(
+            "=" * 80
+        )
 
         print(
             "Observed Behavioural Instability:",
@@ -521,4 +569,6 @@ class DynamicMetaPolicyController:
             ]
         )
 
-        print("=" * 80)
+        print(
+            "=" * 80
+        )
