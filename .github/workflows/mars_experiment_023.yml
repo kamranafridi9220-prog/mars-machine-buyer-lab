@@ -1,0 +1,62 @@
+name: MARS Experiment 023 Active Diagnostic Intelligence
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  active-diagnostic-intelligence:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # SET UP PYTHON
+      # ==========================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+
+      # ==========================================
+      # VERIFY PYTHON
+      # ==========================================
+
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+
+      # ==========================================
+      # VERIFY EXPERIMENT 023 MODULES
+      # ==========================================
+
+      - name: Verify Experiment 023 modules
+        run: |
+          python -c "from inference.active_diagnostic_intelligence_engine import ActiveDiagnosticIntelligenceEngine; print('ActiveDiagnosticIntelligenceEngine OK')"
+          python -c "from inference.buyer_environment_estimator import BuyerEnvironmentEstimator; print('BuyerEnvironmentEstimator OK')"
+          python -c "from inference.diagnostic_probe_generator import DiagnosticProbeGenerator; print('DiagnosticProbeGenerator OK')"
+          python -c "from inference.dynamic_meta_policy_controller import DynamicMetaPolicyController; print('DynamicMetaPolicyController OK')"
+          python -c "from inference.meta_policy_learning_engine import MetaPolicyLearningEngine; print('MetaPolicyLearningEngine OK')"
+
+
+      # ==========================================
+      # RUN EXPERIMENT 023
+      # ==========================================
+
+      - name: Run MARS Experiment 023
+        run: python -m experiments.test_active_diagnostic_intelligence
