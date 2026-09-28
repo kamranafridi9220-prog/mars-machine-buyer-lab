@@ -167,3 +167,10 @@ jobs:
 
       - name: Run MARS Experiment 017
         run: python -m experiments.test_multi_buyer_generalisation
+              # ==========================================
+      # EXPERIMENT 018
+      # PROBABILISTIC BUYER POLICY DISCOVERY
+      # ==========================================
+
+      - name: Run MARS Experiment 018
+        run: python -m experiments.test_probabilistic_policy_discovery
