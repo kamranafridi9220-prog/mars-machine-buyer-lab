@@ -26,23 +26,20 @@ Evaluation dimensions:
 3. Threshold accuracy
 4. Normalised threshold error
 5. Generalisation across buyer archetypes
-6. Generalisation failure handling
+6. Architecture failure rate
 7. Modelled commercial experimentation cost
 
 IMPORTANT:
-Ground-truth policies are used only after discovery
-has completed for evaluation.
+Ground-truth buyer policies are used only after
+black-box discovery for evaluation.
 
-The benchmark deliberately preserves the historical
-Experiment 003 architecture. If its internal reference
-proposal is rejected by a new buyer environment, that
-failure is recorded rather than modifying the original
-inference architecture.
+The historical Experiment 003 architecture is not
+modified. If its hard-coded reference proposal is
+incompatible with a buyer environment, the failure
+is recorded and the benchmark continues.
 """
 
-from buyer_lab.buyer_agent import (
-    CommercialProposal
-)
+from buyer_lab.buyer_agent import CommercialProposal
 
 from buyer_lab.configurable_buyer_agent import (
     BuyerConfigurationFactory
@@ -74,6 +71,25 @@ MAXIMUM_QUERIES = 150
 COST_WEIGHT = 0.25
 
 RISK_WEIGHT = 0.10
+
+
+# ============================================================
+# COMMERCIAL VARIABLES
+# ============================================================
+
+COMMERCIAL_VARIABLES = [
+
+    "annual_price",
+
+    "contract_months",
+
+    "service_availability",
+
+    "payment_days",
+
+    "supplier_reliability"
+
+]
 
 
 # ============================================================
@@ -111,17 +127,16 @@ SEARCH_SPACE = {
 
 
 # ============================================================
-# SAFE REFERENCE PROPOSAL
+# COMMON SAFE REFERENCE PROPOSAL
 # ============================================================
 #
-# This proposal lies inside the feasible region of every
-# configurable buyer used in Experiment 017.
+# This proposal is deliberately feasible across all five
+# configurable buyer environments.
 #
-# It is supplied to the newer discovery architectures.
+# Newer discovery architectures receive this reference.
 #
-# Experiment 003 intentionally retains its original internal
-# reference proposal so its historical architecture is not
-# silently changed for this benchmark.
+# Experiment 003 intentionally retains its historical
+# internally generated reference proposal.
 # ============================================================
 
 SAFE_REFERENCE_PROPOSAL = CommercialProposal(
@@ -137,6 +152,21 @@ SAFE_REFERENCE_PROPOSAL = CommercialProposal(
     supplier_reliability=100.0
 
 )
+
+
+# ============================================================
+# EMPTY POLICY HELPER
+# ============================================================
+
+def create_empty_policy():
+
+    return {
+
+        variable: None
+
+        for variable in COMMERCIAL_VARIABLES
+
+    }
 
 
 # ============================================================
@@ -180,7 +210,7 @@ def calculate_normalised_error(
 
 
 # ============================================================
-# EXTRACT EXPERIMENT 003 POLICY
+# EXTRACT FIXED-INFERENCE POLICY
 # ============================================================
 
 def extract_fixed_policy(
@@ -190,44 +220,41 @@ def extract_fixed_policy(
     extracted = {}
 
 
-    for variable, data in results.items():
+    for variable in COMMERCIAL_VARIABLES:
 
-        extracted[variable] = (
-            data["estimated_threshold"]
-        )
+        if variable not in results:
+
+            extracted[variable] = None
+
+            continue
+
+
+        data = results[
+            variable
+        ]
+
+
+        if isinstance(
+            data,
+            dict
+        ):
+
+            extracted[variable] = (
+                data.get(
+                    "estimated_threshold"
+                )
+            )
+
+        else:
+
+            extracted[variable] = data
 
 
     return extracted
 
 
 # ============================================================
-# EMPTY POLICY
-# ============================================================
-
-def create_empty_policy():
-
-    return {
-
-        "annual_price":
-            None,
-
-        "contract_months":
-            None,
-
-        "service_availability":
-            None,
-
-        "payment_days":
-            None,
-
-        "supplier_reliability":
-            None
-
-    }
-
-
-# ============================================================
-# EVALUATE DISCOVERED POLICY
+# POLICY EVALUATION
 # ============================================================
 
 def evaluate_policy(
@@ -242,9 +269,12 @@ def evaluate_policy(
     total_normalised_error = 0.0
 
 
-    for variable, actual in (
-        ground_truth.items()
-    ):
+    for variable in COMMERCIAL_VARIABLES:
+
+        actual = ground_truth[
+            variable
+        ]
+
 
         estimated = (
             discovered_policy.get(
@@ -255,11 +285,11 @@ def evaluate_policy(
 
         error = calculate_normalised_error(
 
-            variable,
+            variable=variable,
 
-            estimated,
+            estimated=estimated,
 
-            actual
+            actual=actual
 
         )
 
@@ -271,7 +301,9 @@ def evaluate_policy(
             total_normalised_error += error
 
 
-        variable_results[variable] = {
+        variable_results[
+            variable
+        ] = {
 
             "actual":
                 actual,
@@ -286,7 +318,7 @@ def evaluate_policy(
 
 
     total_variables = len(
-        ground_truth
+        COMMERCIAL_VARIABLES
     )
 
 
@@ -338,7 +370,7 @@ def evaluate_policy(
 
 # ============================================================
 # METHOD A
-# FIXED MULTI-DIMENSIONAL INFERENCE
+# HISTORICAL FIXED MULTI-DIMENSIONAL INFERENCE
 # ============================================================
 
 def run_fixed_method(
@@ -381,7 +413,7 @@ def run_fixed_method(
         }
 
 
-    except ValueError as error:
+    except Exception as error:
 
         print("\n" + "!" * 80)
 
@@ -393,6 +425,12 @@ def run_fixed_method(
 
 
         print(
+            "Failure Type:",
+            type(error).__name__
+        )
+
+
+        print(
             "Reason:",
             str(error)
         )
@@ -400,13 +438,22 @@ def run_fixed_method(
 
         print(
             "Buyer Queries Before Failure:",
-            engine.query_count
+            getattr(
+                engine,
+                "query_count",
+                0
+            )
         )
 
 
         print(
-            "Failure recorded. "
-            "Experiment 017 will continue."
+            "The failure has been recorded."
+        )
+
+
+        print(
+            "Experiment 017 will continue "
+            "with the remaining methods."
         )
 
 
@@ -416,13 +463,20 @@ def run_fixed_method(
                 create_empty_policy(),
 
             "queries":
-                engine.query_count,
+                getattr(
+                    engine,
+                    "query_count",
+                    0
+                ),
 
             "status":
                 "FAILED",
 
             "failure_reason":
-                str(error)
+                (
+                    f"{type(error).__name__}: "
+                    f"{str(error)}"
+                )
 
         }
 
@@ -459,14 +513,20 @@ def run_uncertainty_method(
         return {
 
             "policy":
-                results[
-                    "discovered_policy"
-                ],
+                results.get(
+                    "discovered_policy",
+                    create_empty_policy()
+                ),
 
             "queries":
-                results[
-                    "total_queries"
-                ],
+                results.get(
+                    "total_queries",
+                    getattr(
+                        engine,
+                        "query_count",
+                        0
+                    )
+                ),
 
             "status":
                 "SUCCESS",
@@ -489,8 +549,20 @@ def run_uncertainty_method(
 
 
         print(
+            "Failure Type:",
+            type(error).__name__
+        )
+
+
+        print(
             "Reason:",
             str(error)
+        )
+
+
+        print(
+            "Failure recorded. "
+            "Benchmark will continue."
         )
 
 
@@ -500,13 +572,20 @@ def run_uncertainty_method(
                 create_empty_policy(),
 
             "queries":
-                engine.query_count,
+                getattr(
+                    engine,
+                    "query_count",
+                    0
+                ),
 
             "status":
                 "FAILED",
 
             "failure_reason":
-                str(error)
+                (
+                    f"{type(error).__name__}: "
+                    f"{str(error)}"
+                )
 
         }
 
@@ -543,14 +622,20 @@ def run_information_gain_method(
         return {
 
             "policy":
-                results[
-                    "discovered_policy"
-                ],
+                results.get(
+                    "discovered_policy",
+                    create_empty_policy()
+                ),
 
             "queries":
-                results[
-                    "total_queries"
-                ],
+                results.get(
+                    "total_queries",
+                    getattr(
+                        engine,
+                        "query_count",
+                        0
+                    )
+                ),
 
             "status":
                 "SUCCESS",
@@ -573,8 +658,20 @@ def run_information_gain_method(
 
 
         print(
+            "Failure Type:",
+            type(error).__name__
+        )
+
+
+        print(
             "Reason:",
             str(error)
+        )
+
+
+        print(
+            "Failure recorded. "
+            "Benchmark will continue."
         )
 
 
@@ -584,13 +681,20 @@ def run_information_gain_method(
                 create_empty_policy(),
 
             "queries":
-                engine.query_count,
+                getattr(
+                    engine,
+                    "query_count",
+                    0
+                ),
 
             "status":
                 "FAILED",
 
             "failure_reason":
-                str(error)
+                (
+                    f"{type(error).__name__}: "
+                    f"{str(error)}"
+                )
 
         }
 
@@ -628,15 +732,22 @@ def run_cost_aware_method(
         )
 
 
+        selection_history = (
+            results.get(
+                "selection_history",
+                []
+            )
+        )
+
+
         total_probe_cost = sum(
 
-            record[
-                "commercial_cost"
-            ]
+            record.get(
+                "commercial_cost",
+                0.0
+            )
 
-            for record in results[
-                "selection_history"
-            ]
+            for record in selection_history
 
         )
 
@@ -645,25 +756,21 @@ def run_cost_aware_method(
 
             sum(
 
-                record[
-                    "commercial_risk"
-                ]
+                record.get(
+                    "commercial_risk",
+                    0.0
+                )
 
-                for record in results[
-                    "selection_history"
-                ]
+                for record
+                in selection_history
 
             )
             /
             len(
-                results[
-                    "selection_history"
-                ]
+                selection_history
             )
 
-            if results[
-                "selection_history"
-            ]
+            if selection_history
 
             else 0.0
 
@@ -673,14 +780,20 @@ def run_cost_aware_method(
         return {
 
             "policy":
-                results[
-                    "discovered_policy"
-                ],
+                results.get(
+                    "discovered_policy",
+                    create_empty_policy()
+                ),
 
             "queries":
-                results[
-                    "total_queries"
-                ],
+                results.get(
+                    "total_queries",
+                    getattr(
+                        engine,
+                        "query_count",
+                        0
+                    )
+                ),
 
             "modelled_probe_cost":
                 total_probe_cost,
@@ -709,8 +822,20 @@ def run_cost_aware_method(
 
 
         print(
+            "Failure Type:",
+            type(error).__name__
+        )
+
+
+        print(
             "Reason:",
             str(error)
+        )
+
+
+        print(
+            "Failure recorded. "
+            "Benchmark will continue."
         )
 
 
@@ -720,7 +845,11 @@ def run_cost_aware_method(
                 create_empty_policy(),
 
             "queries":
-                engine.query_count,
+                getattr(
+                    engine,
+                    "query_count",
+                    0
+                ),
 
             "modelled_probe_cost":
                 0.0,
@@ -732,7 +861,10 @@ def run_cost_aware_method(
                 "FAILED",
 
             "failure_reason":
-                str(error)
+                (
+                    f"{type(error).__name__}: "
+                    f"{str(error)}"
+                )
 
         }
 
@@ -745,7 +877,9 @@ print("\n" + "=" * 80)
 
 print("MARS — EXPERIMENT 017")
 
-print("MULTI-BUYER GENERALISATION BENCHMARK")
+print(
+    "MULTI-BUYER GENERALISATION BENCHMARK"
+)
 
 print("=" * 80)
 
@@ -764,11 +898,12 @@ print(
 
 
 # ============================================================
-# LOAD GROUND TRUTH
+# LOAD BUYERS AND EVALUATION GROUND TRUTH
 # ============================================================
 
 ground_truth = (
-    BuyerConfigurationFactory.ground_truth()
+    BuyerConfigurationFactory
+    .ground_truth()
 )
 
 
@@ -778,16 +913,19 @@ buyer_names = list(
 
 
 # ============================================================
-# VERIFY SAFE REFERENCE
+# VERIFY COMMON SAFE REFERENCE
 # ============================================================
 
-print("\nVERIFYING COMMON REFERENCE PROPOSAL")
+print(
+    "\nVERIFYING COMMON REFERENCE PROPOSAL"
+)
 
 print("-" * 80)
 
 
 verification_buyers = (
-    BuyerConfigurationFactory.create_buyers()
+    BuyerConfigurationFactory
+    .create_buyers()
 )
 
 
@@ -795,10 +933,10 @@ for buyer_name, buyer in (
     verification_buyers.items()
 ):
 
-    response = buyer.evaluate_proposal(
-
-        SAFE_REFERENCE_PROPOSAL
-
+    response = (
+        buyer.evaluate_proposal(
+            SAFE_REFERENCE_PROPOSAL
+        )
     )
 
 
@@ -813,12 +951,16 @@ for buyer_name, buyer in (
     )
 
 
-    if response["decision"] != "ACCEPTED":
+    if (
+        response["decision"]
+        !=
+        "ACCEPTED"
+    ):
 
         raise ValueError(
 
-            f"Safe reference proposal rejected "
-            f"by {buyer_name}."
+            "Safe reference proposal "
+            f"rejected by {buyer_name}."
 
         )
 
@@ -845,7 +987,7 @@ benchmark_results = {
 
 
 # ============================================================
-# RUN ALL BUYER ENVIRONMENTS
+# RUN MULTI-BUYER BENCHMARK
 # ============================================================
 
 for buyer_name in buyer_names:
@@ -883,19 +1025,23 @@ for buyer_name in buyer_names:
     )
 
 
-    fixed_result = run_fixed_method(
-
-        fixed_buyer
-
+    fixed_result = (
+        run_fixed_method(
+            fixed_buyer
+        )
     )
 
 
-    fixed_evaluation = evaluate_policy(
+    fixed_evaluation = (
+        evaluate_policy(
 
-        fixed_result["policy"],
+            fixed_result[
+                "policy"
+            ],
 
-        truth
+            truth
 
+        )
     )
 
 
@@ -951,9 +1097,7 @@ for buyer_name in buyer_names:
 
     uncertainty_result = (
         run_uncertainty_method(
-
             uncertainty_buyer
-
         )
     )
 
@@ -1023,19 +1167,21 @@ for buyer_name in buyer_names:
 
     ig_result = (
         run_information_gain_method(
-
             ig_buyer
-
         )
     )
 
 
-    ig_evaluation = evaluate_policy(
+    ig_evaluation = (
+        evaluate_policy(
 
-        ig_result["policy"],
+            ig_result[
+                "policy"
+            ],
 
-        truth
+            truth
 
+        )
     )
 
 
@@ -1091,19 +1237,21 @@ for buyer_name in buyer_names:
 
     cost_result = (
         run_cost_aware_method(
-
             cost_buyer
-
         )
     )
 
 
-    cost_evaluation = evaluate_policy(
+    cost_evaluation = (
+        evaluate_policy(
 
-        cost_result["policy"],
+            cost_result[
+                "policy"
+            ],
 
-        truth
+            truth
 
+        )
     )
 
 
@@ -1150,7 +1298,7 @@ for buyer_name in buyer_names:
 
 
 # ============================================================
-# AGGREGATE METHOD RESULTS
+# AGGREGATION FUNCTION
 # ============================================================
 
 def aggregate_method(
@@ -1168,7 +1316,11 @@ def aggregate_method(
 
         for record in records
 
-        if record["status"] == "SUCCESS"
+        if (
+            record["status"]
+            ==
+            "SUCCESS"
+        )
 
     ]
 
@@ -1179,21 +1331,27 @@ def aggregate_method(
 
         for record in records
 
-        if record["status"] == "FAILED"
+        if (
+            record["status"]
+            ==
+            "FAILED"
+        )
 
     ]
 
 
     total_queries = sum(
 
-        record["queries"]
+        record[
+            "queries"
+        ]
 
         for record in records
 
     )
 
 
-    average_queries = (
+    average_queries_all = (
 
         total_queries
         /
@@ -1206,11 +1364,40 @@ def aggregate_method(
     )
 
 
+    successful_query_total = sum(
+
+        record[
+            "queries"
+        ]
+
+        for record
+        in successful_runs
+
+    )
+
+
+    average_queries_successful = (
+
+        successful_query_total
+        /
+        len(
+            successful_runs
+        )
+
+        if successful_runs
+
+        else None
+
+    )
+
+
     average_coverage = (
 
         sum(
 
-            record["coverage"]
+            record[
+                "coverage"
+            ]
 
             for record in records
 
@@ -1233,18 +1420,25 @@ def aggregate_method(
 
         for record in records
 
-        if record[
-            "mean_normalised_error"
-        ] is not None
+        if (
+            record[
+                "mean_normalised_error"
+            ]
+            is not None
+        )
 
     ]
 
 
     average_error = (
 
-        sum(valid_errors)
+        sum(
+            valid_errors
+        )
         /
-        len(valid_errors)
+        len(
+            valid_errors
+        )
 
         if valid_errors
 
@@ -1259,7 +1453,11 @@ def aggregate_method(
 
         for record in records
 
-        if record["coverage"] == 1.0
+        if (
+            record["coverage"]
+            ==
+            1.0
+        )
 
     )
 
@@ -1270,16 +1468,23 @@ def aggregate_method(
             buyer_count,
 
         "successful_runs":
-            len(successful_runs),
+            len(
+                successful_runs
+            ),
 
         "failed_runs":
-            len(failed_runs),
+            len(
+                failed_runs
+            ),
 
         "total_queries":
             total_queries,
 
-        "average_queries":
-            average_queries,
+        "average_queries_all":
+            average_queries_all,
+
+        "average_queries_successful":
+            average_queries_successful,
 
         "average_coverage":
             average_coverage,
@@ -1293,25 +1498,32 @@ def aggregate_method(
     }
 
 
+# ============================================================
+# CALCULATE AGGREGATES
+# ============================================================
+
 aggregates = {
 
     method:
-        aggregate_method(records)
+        aggregate_method(
+            records
+        )
 
-    for method, records in (
-        benchmark_results.items()
-    )
+    for method, records
+    in benchmark_results.items()
 
 }
 
 
 # ============================================================
-# PER-BUYER RESULTS
+# PER-BUYER GENERALISATION RESULTS
 # ============================================================
 
 print("\n" + "=" * 80)
 
-print("PER-BUYER GENERALISATION RESULTS")
+print(
+    "PER-BUYER GENERALISATION RESULTS"
+)
 
 print("=" * 80)
 
@@ -1319,7 +1531,8 @@ print("=" * 80)
 for buyer_name in buyer_names:
 
     print(
-        f"\nBUYER: {buyer_name}"
+        f"\nBUYER: "
+        f"{buyer_name}"
     )
 
     print("-" * 80)
@@ -1335,7 +1548,11 @@ for buyer_name in buyer_names:
 
             for item in records
 
-            if item["buyer"] == buyer_name
+            if (
+                item["buyer"]
+                ==
+                buyer_name
+            )
 
         )
 
@@ -1375,7 +1592,9 @@ for buyer_name in buyer_names:
         )
 
 
-        if record["failure_reason"]:
+        if record[
+            "failure_reason"
+        ]:
 
             print(
 
@@ -1394,7 +1613,10 @@ for buyer_name in buyer_names:
 
 print("\n" + "=" * 80)
 
-print("MARS — EXPERIMENT 017 AGGREGATE RESULTS")
+print(
+    "MARS — EXPERIMENT 017 "
+    "AGGREGATE RESULTS"
+)
 
 print("=" * 80)
 
@@ -1404,7 +1626,8 @@ for method, result in (
 ):
 
     print(
-        f"\nMETHOD: {method}"
+        f"\nMETHOD: "
+        f"{method}"
     )
 
 
@@ -1441,14 +1664,41 @@ for method, result in (
 
 
     print(
-        "  Average Queries per Buyer:",
+        "  Average Queries "
+        "per Buyer:",
         round(
             result[
-                "average_queries"
+                "average_queries_all"
             ],
             4
         )
     )
+
+
+    if (
+        result[
+            "average_queries_successful"
+        ]
+        is not None
+    ):
+
+        print(
+            "  Average Queries "
+            "per Successful Run:",
+            round(
+                result[
+                    "average_queries_successful"
+                ],
+                4
+            )
+        )
+
+    else:
+
+        print(
+            "  Average Queries "
+            "per Successful Run: N/A"
+        )
 
 
     print(
@@ -1478,9 +1728,11 @@ for method, result in (
 # COST-AWARE ECONOMIC SUMMARY
 # ============================================================
 
-cost_records = benchmark_results[
-    "cost_aware"
-]
+cost_records = (
+    benchmark_results[
+        "cost_aware"
+    ]
+)
 
 
 successful_cost_records = [
@@ -1489,7 +1741,11 @@ successful_cost_records = [
 
     for record in cost_records
 
-    if record["status"] == "SUCCESS"
+    if (
+        record["status"]
+        ==
+        "SUCCESS"
+    )
 
 ]
 
@@ -1500,7 +1756,8 @@ total_modelled_cost = sum(
         "modelled_probe_cost"
     ]
 
-    for record in successful_cost_records
+    for record
+    in successful_cost_records
 
 )
 
@@ -1509,7 +1766,9 @@ average_modelled_cost = (
 
     total_modelled_cost
     /
-    len(successful_cost_records)
+    len(
+        successful_cost_records
+    )
 
     if successful_cost_records
 
@@ -1526,11 +1785,14 @@ average_cost_aware_risk = (
             "average_risk"
         ]
 
-        for record in successful_cost_records
+        for record
+        in successful_cost_records
 
     )
     /
-    len(successful_cost_records)
+    len(
+        successful_cost_records
+    )
 
     if successful_cost_records
 
@@ -1541,7 +1803,9 @@ average_cost_aware_risk = (
 
 print("\n" + "=" * 80)
 
-print("COST-AWARE ECONOMIC SUMMARY")
+print(
+    "COST-AWARE ECONOMIC SUMMARY"
+)
 
 print("=" * 80)
 
@@ -1561,8 +1825,8 @@ print(
 
 
 print(
-    "Average Modelled Cost per "
-    "Successful Buyer: £"
+    "Average Modelled Cost "
+    "per Successful Buyer: £"
     f"{average_modelled_cost:,.2f}"
 )
 
@@ -1582,7 +1846,9 @@ print(
 
 print("\n" + "=" * 80)
 
-print("GENERALISATION CHECK")
+print(
+    "GENERALISATION CHECK"
+)
 
 print("=" * 80)
 
@@ -1592,8 +1858,15 @@ for method, result in (
 ):
 
     if (
-        result["failed_runs"] == 0
+
+        result[
+            "failed_runs"
+        ]
+        ==
+        0
+
         and
+
         result[
             "complete_buyer_discoveries"
         ]
@@ -1601,6 +1874,7 @@ for method, result in (
         result[
             "buyer_count"
         ]
+
     ):
 
         status = (
@@ -1608,7 +1882,15 @@ for method, result in (
         )
 
 
-    elif result["successful_runs"] == 0:
+    elif (
+
+        result[
+            "successful_runs"
+        ]
+        ==
+        0
+
+    ):
 
         status = (
             "FAILED ACROSS ALL BUYERS"
@@ -1634,11 +1916,70 @@ for method, result in (
 
 
 # ============================================================
-# EXPERIMENT COMPLETION
+# FAILURE SUMMARY
 # ============================================================
 
 print("\n" + "=" * 80)
 
-print("EXPERIMENT 017 COMPLETED")
+print(
+    "ARCHITECTURE FAILURE SUMMARY"
+)
+
+print("=" * 80)
+
+
+for method, records in (
+    benchmark_results.items()
+):
+
+    failures = [
+
+        record
+
+        for record in records
+
+        if (
+            record["status"]
+            ==
+            "FAILED"
+        )
+
+    ]
+
+
+    print(
+        f"\n{method}: "
+        f"{len(failures)} failure(s)"
+    )
+
+
+    for failure in failures:
+
+        print(
+
+            "  ",
+
+            failure[
+                "buyer"
+            ],
+
+            "→",
+
+            failure[
+                "failure_reason"
+            ]
+
+        )
+
+
+# ============================================================
+# FINAL EXPERIMENT SUMMARY
+# ============================================================
+
+print("\n" + "=" * 80)
+
+print(
+    "EXPERIMENT 017 COMPLETED"
+)
 
 print("=" * 80)
