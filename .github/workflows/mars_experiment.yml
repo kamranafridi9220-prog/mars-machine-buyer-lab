@@ -160,3 +160,10 @@ jobs:
 
       - name: Run MARS Experiment 016
         run: python -m experiments.test_cost_aware_information
+      # ==========================================
+      # EXPERIMENT 017
+      # MULTI-BUYER GENERALISATION BENCHMARK
+      # ==========================================
+
+      - name: Run MARS Experiment 017
+        run: python -m experiments.test_multi_buyer_generalisation
