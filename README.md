@@ -1354,6 +1354,27 @@ BUYER WORLD MODEL
 CONTINUAL WORLD-MODEL LEARNING
 ```
 
+<p align="center">
+  <img src="./assets/mars-intelligence-evolution.png"
+       alt="Evolution of MARS Intelligence across Experiments 001 to 025"
+       width="100%">
+</p>
+
+<p align="center">
+  <em>
+    Figure 2. Research evolution of MARS across 25 experiments, progressing
+    from black-box buyer and policy intelligence through commercial decision
+    intelligence, active policy discovery, stochastic buyer intelligence,
+    and autonomous environment intelligence.
+  </em>
+</p>
+
+> **Figure note:** The stage-level mini-plots in this research progression
+> are conceptual illustrations of the corresponding research capabilities.
+> Verified quantitative experimental measurements are reported separately
+> in [`MARS_RESULTS_REGISTRY.md`](MARS_RESULTS_REGISTRY.md).
+
+---
 ---
 
 # Research Layers
