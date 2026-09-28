@@ -39,6 +39,27 @@ Across 25 sequential computational experiments, this question evolves further:
 MARS investigates these questions through controlled computational experiments involving simulated purchasing agents, black-box policy inference, commercial intervention, adaptive experimentation, negotiation, stochastic buyer behaviour, environment estimation, world-model learning and continual adaptation.
 
 ---
+---
+
+## MARS Research Architecture
+
+<p align="center">
+  <img src="assets/mars-research-architecture.png"
+       alt="MARS Machine-Agent Revenue Science Research Architecture"
+       width="100%">
+</p>
+
+<p align="center">
+  <em>
+    End-to-end architecture of the MARS experimental framework, showing the progression
+    from autonomous buyer simulation and black-box commercial experimentation through
+    policy inference, active evidence acquisition, environment diagnosis,
+    meta-policy selection, buyer world modelling, and supplier decision intelligence.
+  </em>
+</p>
+
+---
+---
 
 # The Problem
 
