@@ -1237,7 +1237,31 @@ Yet the additional experience did not improve overall predictive performance.
 This produces one of the most important findings in the MARS programme:
 
 > **Novel experience is not necessarily reliable experience.**
+### Static vs Continual Buyer World Model
 
+<p align="center">
+  <img src="./assets/mars-experiment-025-static-vs-continual.png"
+       alt="MARS Experiment 025 Static vs Continual Buyer World Model"
+       width="100%">
+</p>
+
+<p align="center">
+  <em>
+    Figure 3. Experiment 025 compares a static buyer world model with a
+    continually updated model under matched online buyer episodes.
+    Despite expanding its memory from 120 to 191 experiences, the continual
+    model achieved 47.50% exact classification accuracy compared with
+    54.17% for the static baseline.
+  </em>
+</p>
+
+> **Key finding:** More memory did not automatically produce better prediction.
+> The continual model accumulated 71 additional experiences and reported
+> higher mean confidence, while its exact classification accuracy decreased.
+> This motivates future investigation of memory quality, experience validation,
+> confidence calibration and protected continual learning.
+
+---
 ---
 
 # Why the Negative Result Matters
