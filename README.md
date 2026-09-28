@@ -44,7 +44,7 @@ MARS investigates these questions through controlled computational experiments i
 ## MARS Research Architecture
 
 <p align="center">
-  <img src="assets/mars-research-architecture.png"
+  <img src="assets/mars-research-architecture.png.png"
        alt="MARS Machine-Agent Revenue Science Research Architecture"
        width="100%">
 </p>
