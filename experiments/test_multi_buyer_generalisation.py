@@ -26,9 +26,18 @@ Evaluation dimensions:
 3. Threshold accuracy
 4. Normalised threshold error
 5. Generalisation across buyer archetypes
+6. Generalisation failure handling
+7. Modelled commercial experimentation cost
 
+IMPORTANT:
 Ground-truth policies are used only after discovery
-for evaluation.
+has completed for evaluation.
+
+The benchmark deliberately preserves the historical
+Experiment 003 architecture. If its internal reference
+proposal is rejected by a new buyer environment, that
+failure is recorded rather than modifying the original
+inference architecture.
 """
 
 from buyer_lab.buyer_agent import (
@@ -57,7 +66,7 @@ from optimization.cost_aware_information_engine import (
 
 
 # ============================================================
-# CONFIGURATION
+# EXPERIMENT CONFIGURATION
 # ============================================================
 
 MAXIMUM_QUERIES = 150
@@ -105,11 +114,14 @@ SEARCH_SPACE = {
 # SAFE REFERENCE PROPOSAL
 # ============================================================
 #
-# This proposal is deliberately inside the feasible region
-# of every buyer configuration used in Experiment 017.
+# This proposal lies inside the feasible region of every
+# configurable buyer used in Experiment 017.
 #
-# Discovery engines receive only this proposal and observable
-# ACCEPTED / REJECTED buyer responses.
+# It is supplied to the newer discovery architectures.
+#
+# Experiment 003 intentionally retains its original internal
+# reference proposal so its historical architecture is not
+# silently changed for this benchmark.
 # ============================================================
 
 SAFE_REFERENCE_PROPOSAL = CommercialProposal(
@@ -128,7 +140,7 @@ SAFE_REFERENCE_PROPOSAL = CommercialProposal(
 
 
 # ============================================================
-# HELPER — NORMALISED ERROR
+# NORMALISED ERROR
 # ============================================================
 
 def calculate_normalised_error(
@@ -168,7 +180,7 @@ def calculate_normalised_error(
 
 
 # ============================================================
-# HELPER — EXTRACT FIXED POLICY
+# EXTRACT EXPERIMENT 003 POLICY
 # ============================================================
 
 def extract_fixed_policy(
@@ -189,7 +201,33 @@ def extract_fixed_policy(
 
 
 # ============================================================
-# HELPER — EVALUATE ONE DISCOVERY RESULT
+# EMPTY POLICY
+# ============================================================
+
+def create_empty_policy():
+
+    return {
+
+        "annual_price":
+            None,
+
+        "contract_months":
+            None,
+
+        "service_availability":
+            None,
+
+        "payment_days":
+            None,
+
+        "supplier_reliability":
+            None
+
+    }
+
+
+# ============================================================
+# EVALUATE DISCOVERED POLICY
 # ============================================================
 
 def evaluate_policy(
@@ -299,7 +337,8 @@ def evaluate_policy(
 
 
 # ============================================================
-# HELPER — RUN FIXED INFERENCE
+# METHOD A
+# FIXED MULTI-DIMENSIONAL INFERENCE
 # ============================================================
 
 def run_fixed_method(
@@ -313,29 +352,84 @@ def run_fixed_method(
     )
 
 
-    results = (
-        engine.discover_all_policies()
-    )
+    try:
+
+        results = (
+            engine.discover_all_policies()
+        )
 
 
-    policy = extract_fixed_policy(
-        results
-    )
+        policy = extract_fixed_policy(
+            results
+        )
 
 
-    return {
+        return {
 
-        "policy":
-            policy,
+            "policy":
+                policy,
 
-        "queries":
+            "queries":
+                engine.query_count,
+
+            "status":
+                "SUCCESS",
+
+            "failure_reason":
+                None
+
+        }
+
+
+    except ValueError as error:
+
+        print("\n" + "!" * 80)
+
+        print(
+            "FIXED INFERENCE GENERALISATION FAILURE"
+        )
+
+        print("!" * 80)
+
+
+        print(
+            "Reason:",
+            str(error)
+        )
+
+
+        print(
+            "Buyer Queries Before Failure:",
             engine.query_count
+        )
 
-    }
+
+        print(
+            "Failure recorded. "
+            "Experiment 017 will continue."
+        )
+
+
+        return {
+
+            "policy":
+                create_empty_policy(),
+
+            "queries":
+                engine.query_count,
+
+            "status":
+                "FAILED",
+
+            "failure_reason":
+                str(error)
+
+        }
 
 
 # ============================================================
-# HELPER — RUN UNCERTAINTY METHOD
+# METHOD B
+# UNCERTAINTY-DRIVEN AUTONOMOUS SELECTION
 # ============================================================
 
 def run_uncertainty_method(
@@ -353,30 +447,73 @@ def run_uncertainty_method(
     )
 
 
-    results = engine.discover_policy(
+    try:
 
-        maximum_queries=MAXIMUM_QUERIES
+        results = engine.discover_policy(
 
-    )
+            maximum_queries=MAXIMUM_QUERIES
+
+        )
 
 
-    return {
+        return {
 
-        "policy":
-            results[
-                "discovered_policy"
-            ],
+            "policy":
+                results[
+                    "discovered_policy"
+                ],
 
-        "queries":
-            results[
-                "total_queries"
-            ]
+            "queries":
+                results[
+                    "total_queries"
+                ],
 
-    }
+            "status":
+                "SUCCESS",
+
+            "failure_reason":
+                None
+
+        }
+
+
+    except Exception as error:
+
+        print("\n" + "!" * 80)
+
+        print(
+            "UNCERTAINTY METHOD FAILURE"
+        )
+
+        print("!" * 80)
+
+
+        print(
+            "Reason:",
+            str(error)
+        )
+
+
+        return {
+
+            "policy":
+                create_empty_policy(),
+
+            "queries":
+                engine.query_count,
+
+            "status":
+                "FAILED",
+
+            "failure_reason":
+                str(error)
+
+        }
 
 
 # ============================================================
-# HELPER — RUN EXPECTED IG METHOD
+# METHOD C
+# EXPECTED INFORMATION GAIN
 # ============================================================
 
 def run_information_gain_method(
@@ -394,30 +531,73 @@ def run_information_gain_method(
     )
 
 
-    results = engine.discover_policy(
+    try:
 
-        maximum_queries=MAXIMUM_QUERIES
+        results = engine.discover_policy(
 
-    )
+            maximum_queries=MAXIMUM_QUERIES
+
+        )
 
 
-    return {
+        return {
 
-        "policy":
-            results[
-                "discovered_policy"
-            ],
+            "policy":
+                results[
+                    "discovered_policy"
+                ],
 
-        "queries":
-            results[
-                "total_queries"
-            ]
+            "queries":
+                results[
+                    "total_queries"
+                ],
 
-    }
+            "status":
+                "SUCCESS",
+
+            "failure_reason":
+                None
+
+        }
+
+
+    except Exception as error:
+
+        print("\n" + "!" * 80)
+
+        print(
+            "EXPECTED INFORMATION GAIN METHOD FAILURE"
+        )
+
+        print("!" * 80)
+
+
+        print(
+            "Reason:",
+            str(error)
+        )
+
+
+        return {
+
+            "policy":
+                create_empty_policy(),
+
+            "queries":
+                engine.query_count,
+
+            "status":
+                "FAILED",
+
+            "failure_reason":
+                str(error)
+
+        }
 
 
 # ============================================================
-# HELPER — RUN COST-AWARE METHOD
+# METHOD D
+# COST-AWARE INFORMATION SELECTION
 # ============================================================
 
 def run_cost_aware_method(
@@ -439,32 +619,19 @@ def run_cost_aware_method(
     )
 
 
-    results = engine.discover_policy(
+    try:
 
-        maximum_queries=MAXIMUM_QUERIES
+        results = engine.discover_policy(
 
-    )
+            maximum_queries=MAXIMUM_QUERIES
 
-
-    total_probe_cost = sum(
-
-        record[
-            "commercial_cost"
-        ]
-
-        for record in results[
-            "selection_history"
-        ]
-
-    )
+        )
 
 
-    average_risk = (
-
-        sum(
+        total_probe_cost = sum(
 
             record[
-                "commercial_risk"
+                "commercial_cost"
             ]
 
             for record in results[
@@ -472,41 +639,102 @@ def run_cost_aware_method(
             ]
 
         )
-        /
-        len(
-            results[
+
+
+        average_risk = (
+
+            sum(
+
+                record[
+                    "commercial_risk"
+                ]
+
+                for record in results[
+                    "selection_history"
+                ]
+
+            )
+            /
+            len(
+                results[
+                    "selection_history"
+                ]
+            )
+
+            if results[
                 "selection_history"
             ]
+
+            else 0.0
+
         )
 
-        if results[
-            "selection_history"
-        ]
 
-        else 0.0
+        return {
 
-    )
+            "policy":
+                results[
+                    "discovered_policy"
+                ],
+
+            "queries":
+                results[
+                    "total_queries"
+                ],
+
+            "modelled_probe_cost":
+                total_probe_cost,
+
+            "average_risk":
+                average_risk,
+
+            "status":
+                "SUCCESS",
+
+            "failure_reason":
+                None
+
+        }
 
 
-    return {
+    except Exception as error:
 
-        "policy":
-            results[
-                "discovered_policy"
-            ],
+        print("\n" + "!" * 80)
 
-        "queries":
-            results[
-                "total_queries"
-            ],
+        print(
+            "COST-AWARE METHOD FAILURE"
+        )
 
-        "modelled_probe_cost":
-            total_probe_cost,
+        print("!" * 80)
 
-        "average_risk":
-            average_risk
 
-    }
+        print(
+            "Reason:",
+            str(error)
+        )
+
+
+        return {
+
+            "policy":
+                create_empty_policy(),
+
+            "queries":
+                engine.query_count,
+
+            "modelled_probe_cost":
+                0.0,
+
+            "average_risk":
+                0.0,
+
+            "status":
+                "FAILED",
+
+            "failure_reason":
+                str(error)
+
+        }
 
 
 # ============================================================
@@ -522,8 +750,21 @@ print("MULTI-BUYER GENERALISATION BENCHMARK")
 print("=" * 80)
 
 
+print(
+    "\nDiscovery Architectures: 4"
+)
+
+print(
+    "Buyer Environments: 5"
+)
+
+print(
+    "Maximum Discovery Trials: 20"
+)
+
+
 # ============================================================
-# LOAD BUYER CONFIGURATIONS
+# LOAD GROUND TRUTH
 # ============================================================
 
 ground_truth = (
@@ -537,7 +778,7 @@ buyer_names = list(
 
 
 # ============================================================
-# VERIFY SAFE REFERENCE AGAINST EVERY BUYER
+# VERIFY SAFE REFERENCE
 # ============================================================
 
 print("\nVERIFYING COMMON REFERENCE PROPOSAL")
@@ -625,10 +866,13 @@ for buyer_name in buyer_names:
 
 
     # ========================================================
-    # METHOD A — FIXED INFERENCE
+    # METHOD A
     # ========================================================
 
-    print("\nMETHOD A — FIXED INFERENCE")
+    print(
+        "\nMETHOD A — "
+        "FIXED MULTI-DIMENSIONAL INFERENCE"
+    )
 
 
     fixed_buyer = (
@@ -665,6 +909,16 @@ for buyer_name in buyer_names:
                 "queries"
             ],
 
+        "status":
+            fixed_result[
+                "status"
+            ],
+
+        "failure_reason":
+            fixed_result[
+                "failure_reason"
+            ],
+
         **fixed_evaluation
 
     }
@@ -678,7 +932,7 @@ for buyer_name in buyer_names:
 
 
     # ========================================================
-    # METHOD B — UNCERTAINTY SELECTION
+    # METHOD B
     # ========================================================
 
     print(
@@ -727,6 +981,16 @@ for buyer_name in buyer_names:
                 "queries"
             ],
 
+        "status":
+            uncertainty_result[
+                "status"
+            ],
+
+        "failure_reason":
+            uncertainty_result[
+                "failure_reason"
+            ],
+
         **uncertainty_evaluation
 
     }
@@ -740,7 +1004,7 @@ for buyer_name in buyer_names:
 
 
     # ========================================================
-    # METHOD C — EXPECTED INFORMATION GAIN
+    # METHOD C
     # ========================================================
 
     print(
@@ -785,6 +1049,16 @@ for buyer_name in buyer_names:
                 "queries"
             ],
 
+        "status":
+            ig_result[
+                "status"
+            ],
+
+        "failure_reason":
+            ig_result[
+                "failure_reason"
+            ],
+
         **ig_evaluation
 
     }
@@ -798,7 +1072,7 @@ for buyer_name in buyer_names:
 
 
     # ========================================================
-    # METHOD D — COST-AWARE INFORMATION
+    # METHOD D
     # ========================================================
 
     print(
@@ -853,6 +1127,16 @@ for buyer_name in buyer_names:
                 "average_risk"
             ],
 
+        "status":
+            cost_result[
+                "status"
+            ],
+
+        "failure_reason":
+            cost_result[
+                "failure_reason"
+            ],
+
         **cost_evaluation
 
     }
@@ -876,6 +1160,28 @@ def aggregate_method(
     buyer_count = len(
         records
     )
+
+
+    successful_runs = [
+
+        record
+
+        for record in records
+
+        if record["status"] == "SUCCESS"
+
+    ]
+
+
+    failed_runs = [
+
+        record
+
+        for record in records
+
+        if record["status"] == "FAILED"
+
+    ]
 
 
     total_queries = sum(
@@ -963,6 +1269,12 @@ def aggregate_method(
         "buyer_count":
             buyer_count,
 
+        "successful_runs":
+            len(successful_runs),
+
+        "failed_runs":
+            len(failed_runs),
+
         "total_queries":
             total_queries,
 
@@ -1048,6 +1360,9 @@ for buyer_name in buyer_names:
 
             f"{method:30} | "
 
+            f"Status: "
+            f"{record['status']:7} | "
+
             f"Queries: "
             f"{record['queries']:3} | "
 
@@ -1058,6 +1373,19 @@ for buyer_name in buyer_names:
             f"{error_text}"
 
         )
+
+
+        if record["failure_reason"]:
+
+            print(
+
+                "  Failure Reason:",
+
+                record[
+                    "failure_reason"
+                ]
+
+            )
 
 
 # ============================================================
@@ -1079,6 +1407,7 @@ for method, result in (
         f"\nMETHOD: {method}"
     )
 
+
     print(
         "  Buyer Environments:",
         result[
@@ -1086,12 +1415,30 @@ for method, result in (
         ]
     )
 
+
+    print(
+        "  Successful Runs:",
+        result[
+            "successful_runs"
+        ]
+    )
+
+
+    print(
+        "  Failed Runs:",
+        result[
+            "failed_runs"
+        ]
+    )
+
+
     print(
         "  Total Buyer Queries:",
         result[
             "total_queries"
         ]
     )
+
 
     print(
         "  Average Queries per Buyer:",
@@ -1103,10 +1450,12 @@ for method, result in (
         )
     )
 
+
     print(
         "  Average Policy Coverage:",
         f"{result['average_coverage'] * 100:.2f}%"
     )
+
 
     print(
         "  Complete Buyer Discoveries:",
@@ -1115,6 +1464,7 @@ for method, result in (
             f"/{result['buyer_count']}"
         )
     )
+
 
     print(
         "  Average Normalised Error:",
@@ -1125,11 +1475,22 @@ for method, result in (
 
 
 # ============================================================
-# COST-AWARE ECONOMIC RESULTS
+# COST-AWARE ECONOMIC SUMMARY
 # ============================================================
 
 cost_records = benchmark_results[
     "cost_aware"
+]
+
+
+successful_cost_records = [
+
+    record
+
+    for record in cost_records
+
+    if record["status"] == "SUCCESS"
+
 ]
 
 
@@ -1139,7 +1500,7 @@ total_modelled_cost = sum(
         "modelled_probe_cost"
     ]
 
-    for record in cost_records
+    for record in successful_cost_records
 
 )
 
@@ -1148,9 +1509,9 @@ average_modelled_cost = (
 
     total_modelled_cost
     /
-    len(cost_records)
+    len(successful_cost_records)
 
-    if cost_records
+    if successful_cost_records
 
     else 0.0
 
@@ -1165,13 +1526,13 @@ average_cost_aware_risk = (
             "average_risk"
         ]
 
-        for record in cost_records
+        for record in successful_cost_records
 
     )
     /
-    len(cost_records)
+    len(successful_cost_records)
 
-    if cost_records
+    if successful_cost_records
 
     else 0.0
 
@@ -1186,13 +1547,22 @@ print("=" * 80)
 
 
 print(
+    "Successful Cost-Aware Runs:",
+    len(
+        successful_cost_records
+    )
+)
+
+
+print(
     "Total Modelled Probe Cost: £"
     f"{total_modelled_cost:,.2f}"
 )
 
 
 print(
-    "Average Modelled Cost per Buyer: £"
+    "Average Modelled Cost per "
+    "Successful Buyer: £"
     f"{average_modelled_cost:,.2f}"
 )
 
@@ -1222,6 +1592,8 @@ for method, result in (
 ):
 
     if (
+        result["failed_runs"] == 0
+        and
         result[
             "complete_buyer_discoveries"
         ]
@@ -1234,6 +1606,14 @@ for method, result in (
         status = (
             "COMPLETE ACROSS ALL BUYERS"
         )
+
+
+    elif result["successful_runs"] == 0:
+
+        status = (
+            "FAILED ACROSS ALL BUYERS"
+        )
+
 
     else:
 
