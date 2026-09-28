@@ -146,3 +146,10 @@ jobs:
 
       - name: Run MARS Experiment 014
         run: python -m experiments.test_policy_discovery_benchmark
+      # ==========================================
+      # EXPERIMENT 015
+      # EXPECTED INFORMATION GAIN POLICY DISCOVERY
+      # ==========================================
+
+      - name: Run MARS Experiment 015
+        run: python -m experiments.test_expected_information_gain
