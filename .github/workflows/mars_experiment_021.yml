@@ -1,0 +1,49 @@
+name: MARS Experiment 021 Meta-Policy Learning
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  meta-policy-learning:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # SET UP PYTHON
+      # ==========================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+
+      # ==========================================
+      # VERIFY PYTHON ENVIRONMENT
+      # ==========================================
+
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+
+      # ==========================================
+      # RUN EXPERIMENT 021
+      # ==========================================
+
+      - name: Run MARS Experiment 021
+        run: python -m experiments.test_meta_policy_learning
