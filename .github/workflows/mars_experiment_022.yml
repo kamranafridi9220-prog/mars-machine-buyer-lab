@@ -1,0 +1,60 @@
+name: MARS Experiment 022 Latent Environment Identification
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  latent-environment-identification:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # SET UP PYTHON
+      # ==========================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+
+      # ==========================================
+      # VERIFY PYTHON ENVIRONMENT
+      # ==========================================
+
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+
+      # ==========================================
+      # VERIFY EXPERIMENT 022 MODULES
+      # ==========================================
+
+      - name: Verify Experiment 022 modules
+        run: |
+          python -c "from inference.buyer_environment_estimator import BuyerEnvironmentEstimator; print('BuyerEnvironmentEstimator OK')"
+          python -c "from inference.diagnostic_probe_generator import DiagnosticProbeGenerator; print('DiagnosticProbeGenerator OK')"
+          python -c "from inference.dynamic_meta_policy_controller import DynamicMetaPolicyController; print('DynamicMetaPolicyController OK')"
+
+
+      # ==========================================
+      # RUN EXPERIMENT 022
+      # ==========================================
+
+      - name: Run MARS Experiment 022
+        run: python -m experiments.test_latent_environment_identification
