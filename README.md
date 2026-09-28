@@ -1385,7 +1385,36 @@ CONTINUAL WORLD-MODEL LEARNING
 | 025 | Continual World Model | **47.50% vs 54.17% static accuracy** |
 
 ---
+## Query Efficiency Across MARS
 
+<p align="center">
+  <img src="./assets/mars-query-efficiency.png"
+       alt="Query Efficiency Across MARS Experiments"
+       width="100%">
+</p>
+
+<p align="center">
+  <em>
+    Figure 1. Query-efficiency comparison across selected MARS experiments.
+    Active and adaptive architectures reduced buyer interaction requirements
+    by 20.55% in Experiment 014, 44.72% in Experiment 019,
+    39.41% on average in Experiment 020, and 68.94% in Experiment 023.
+  </em>
+</p>
+
+The results show how the research programme progressively moved from
+fixed experimentation toward increasingly selective evidence acquisition.
+The largest measured reduction occurred in Experiment 023, where active
+diagnostic intelligence reduced the mean diagnostic requirement from
+240 queries to approximately 74.53 while maintaining 100% final policy
+coverage in the matched simulated benchmark.
+
+> **Experimental boundary:** These measurements were produced within the
+> simulated MARS buyer environments and should not be interpreted as
+> equivalent performance against real-world autonomous procurement systems.
+
+---
+---
 # Example Research Scenario
 
 A supplier submits a commercial proposal to an autonomous purchasing agent.
