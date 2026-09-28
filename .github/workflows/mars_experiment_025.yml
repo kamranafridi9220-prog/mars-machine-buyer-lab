@@ -1,0 +1,71 @@
+name: MARS Experiment 025 Continual Buyer World Model
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  continual-buyer-world-model:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # SET UP PYTHON
+      # ==========================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+
+      # ==========================================
+      # VERIFY PYTHON
+      # ==========================================
+
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+
+      # ==========================================
+      # VERIFY EXPERIMENT 025 MODULES
+      # ==========================================
+
+      - name: Verify Experiment 025 modules
+        run: |
+          python -c "from inference.buyer_world_model import BuyerWorldModel; print('BuyerWorldModel OK')"
+          python -c "from inference.world_model_training_lab import WorldModelTrainingLab; print('WorldModelTrainingLab OK')"
+          python -c "from inference.continual_buyer_world_model import ContinualBuyerWorldModel; print('ContinualBuyerWorldModel OK')"
+
+
+      # ==========================================
+      # VERIFY EXPERIMENT RUNNER
+      # ==========================================
+
+      - name: Verify Experiment 025 runner
+        run: |
+          test -f experiments/test_continual_buyer_world_model.py
+          echo "Experiment 025 runner found"
+
+
+      # ==========================================
+      # RUN EXPERIMENT 025
+      # ==========================================
+
+      - name: Run MARS Experiment 025
+        run: |
+          python -m experiments.test_continual_buyer_world_model
