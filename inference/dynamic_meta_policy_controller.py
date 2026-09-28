@@ -1,7 +1,7 @@
 """
 MARS — Machine-Agent Revenue Science
 
-Experiment 022
+Experiment 022 / 023
 
 Dynamic Meta-Policy Controller
 
@@ -13,18 +13,16 @@ autonomous buyer using an inferred behavioural environment
 rather than direct access to the simulator's hidden
 noise-strength parameter.
 
-The controller receives observable behavioural evidence
-from the BuyerEnvironmentEstimator and maps that evidence
-to the learned sampling policies established by the
-MetaPolicyLearningEngine.
+Compatible with:
 
-Important:
-The MetaPolicyLearningEngine stores learned environment
-results in `environment_statistics`.
+Experiment 022
+    Fixed diagnostic sampling.
 
-The controller therefore reads the trained noise regimes
-from that structure rather than expecting a separate
-`learned_policy` attribute.
+Experiment 023
+    Active adaptive diagnostic sampling with unequal
+    observations across probes.
+
+The controller never requires the true simulator noise.
 """
 
 
@@ -65,17 +63,16 @@ class DynamicMetaPolicyController:
                 "dynamic selection."
             )
 
-        regimes = []
+        regimes = [
 
-        for noise_level in (
-            environment_statistics.keys()
-        ):
-
-            regimes.append(
-                float(
-                    noise_level
-                )
+            float(
+                noise_level
             )
+
+            for noise_level in (
+                environment_statistics.keys()
+            )
+        ]
 
         if not regimes:
 
@@ -185,46 +182,183 @@ class DynamicMetaPolicyController:
 
 
     # ========================================================
-    # CALCULATE ESTIMATION CONFIDENCE
+    # SAFE NUMERIC CONVERSION
     # ========================================================
 
     @staticmethod
+    def _safe_float(
+        value,
+        default=0.0
+    ):
+
+        if value is None:
+
+            return float(
+                default
+            )
+
+        try:
+
+            return float(
+                value
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            return float(
+                default
+            )
+
+
+    # ========================================================
+    # CALCULATE ESTIMATION CONFIDENCE
+    # ========================================================
+
+    @classmethod
     def calculate_estimation_confidence(
+        cls,
         environment_result
     ):
 
-        ci_width = float(
+        """
+        Supports both diagnostic architectures.
+
+        Experiment 022:
+            Uses fixed observations per probe and
+            confidence-interval width.
+
+        Experiment 023:
+            Uses adaptive total diagnostic queries and
+            the environment posterior confidence produced
+            by ActiveDiagnosticIntelligenceEngine.
+
+        This avoids assuming that every active probe
+        receives the same number of observations.
+        """
+
+        # ----------------------------------------------------
+        # ACTIVE DIAGNOSTIC CONFIDENCE
+        # ----------------------------------------------------
+
+        active_confidence = (
             environment_result.get(
-                "mean_acceptance_ci_width",
-                1.0
+                "environment_confidence"
             )
         )
 
-        probe_count = int(
-            environment_result.get(
-                "diagnostic_probes",
-                0
+        if active_confidence is not None:
+
+            active_confidence = (
+                cls._safe_float(
+                    active_confidence,
+                    default=0.0
+                )
+            )
+
+            total_queries = (
+                cls._safe_float(
+                    environment_result.get(
+                        "total_diagnostic_queries"
+                    ),
+                    default=0.0
+                )
+            )
+
+            query_component = min(
+                1.0,
+                total_queries
+                /
+                120.0
+            )
+
+            confidence = (
+                0.80
+                *
+                active_confidence
+                +
+                0.20
+                *
+                query_component
+            )
+
+            return max(
+                0.0,
+                min(
+                    1.0,
+                    confidence
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # FIXED DIAGNOSTIC CONFIDENCE
+        # ----------------------------------------------------
+
+        ci_width = (
+            cls._safe_float(
+                environment_result.get(
+                    "mean_acceptance_ci_width"
+                ),
+                default=1.0
             )
         )
 
-        observations_per_probe = int(
-            environment_result.get(
-                "observations_per_probe",
-                0
+        probe_count = (
+            cls._safe_float(
+                environment_result.get(
+                    "diagnostic_probes"
+                ),
+                default=0.0
             )
         )
 
-        total_observations = (
-            probe_count
-            *
-            observations_per_probe
+        observations_per_probe = (
+            environment_result.get(
+                "observations_per_probe"
+            )
         )
+
+        total_queries = (
+            environment_result.get(
+                "total_diagnostic_queries"
+            )
+        )
+
+        # Prefer the directly observed query count.
+        if total_queries is not None:
+
+            total_observations = (
+                cls._safe_float(
+                    total_queries,
+                    default=0.0
+                )
+            )
+
+        else:
+
+            observations_per_probe = (
+                cls._safe_float(
+                    observations_per_probe,
+                    default=0.0
+                )
+            )
+
+            total_observations = (
+                probe_count
+                *
+                observations_per_probe
+            )
 
         interval_component = max(
             0.0,
             min(
                 1.0,
-                1.0 - ci_width
+                1.0
+                -
+                ci_width
             )
         )
 
@@ -263,8 +397,9 @@ class DynamicMetaPolicyController:
         environment_result
     ):
 
-        if "estimated_noise" not in (
-            environment_result
+        if (
+            "estimated_noise"
+            not in environment_result
         ):
 
             raise ValueError(
@@ -272,10 +407,12 @@ class DynamicMetaPolicyController:
                 "estimated_noise."
             )
 
-        estimated_noise = float(
-            environment_result[
-                "estimated_noise"
-            ]
+        estimated_noise = (
+            self._safe_float(
+                environment_result[
+                    "estimated_noise"
+                ]
+            )
         )
 
         nearest_regime = (
@@ -297,15 +434,10 @@ class DynamicMetaPolicyController:
         )
 
         # ----------------------------------------------------
-        # IMPORTANT
+        # META-POLICY SELECTION
         #
-        # select_policy() belongs to the Experiment 021
-        # MetaPolicyLearningEngine.
-        #
-        # It chooses the learned policy associated with
-        # the nearest trained noise environment.
-        #
-        # The TRUE simulator noise is never passed here.
+        # Only the inferred environment is used here.
+        # The true simulator noise is not supplied.
         # ----------------------------------------------------
 
         selection = (
@@ -419,7 +551,7 @@ class DynamicMetaPolicyController:
 
 
     # ========================================================
-    # GENERATE CONTROLLER SUMMARY
+    # GENERATE SUMMARY
     # ========================================================
 
     def generate_summary(
