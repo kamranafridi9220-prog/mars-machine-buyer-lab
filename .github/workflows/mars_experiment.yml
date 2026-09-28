@@ -153,3 +153,10 @@ jobs:
 
       - name: Run MARS Experiment 015
         run: python -m experiments.test_expected_information_gain
+      # ==========================================
+      # EXPERIMENT 016
+      # COST-AWARE INFORMATION GAIN
+      # ==========================================
+
+      - name: Run MARS Experiment 016
+        run: python -m experiments.test_cost_aware_information
