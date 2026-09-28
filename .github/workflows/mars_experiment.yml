@@ -174,3 +174,10 @@ jobs:
 
       - name: Run MARS Experiment 018
         run: python -m experiments.test_probabilistic_policy_discovery
+      # ==========================================
+      # EXPERIMENT 019
+      # ADAPTIVE SEQUENTIAL EVIDENCE ACQUISITION
+      # ==========================================
+
+      - name: Run MARS Experiment 019
+        run: python -m experiments.test_adaptive_sequential_evidence
