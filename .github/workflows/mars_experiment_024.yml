@@ -1,0 +1,61 @@
+name: MARS Experiment 024 Buyer World Model
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  buyer-world-model:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      # ==========================================
+      # CHECKOUT REPOSITORY
+      # ==========================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ==========================================
+      # SET UP PYTHON
+      # ==========================================
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+
+      # ==========================================
+      # VERIFY PYTHON
+      # ==========================================
+
+      - name: Verify Python
+        run: |
+          python --version
+          python -m pip --version
+
+
+      # ==========================================
+      # VERIFY EXPERIMENT 024 MODULES
+      # ==========================================
+
+      - name: Verify Experiment 024 modules
+        run: |
+          python -c "from inference.buyer_world_model import BuyerWorldModel; print('BuyerWorldModel OK')"
+          python -c "from inference.world_model_training_lab import WorldModelTrainingLab; print('WorldModelTrainingLab OK')"
+          python -c "from inference.active_diagnostic_intelligence_engine import ActiveDiagnosticIntelligenceEngine; print('ActiveDiagnosticIntelligenceEngine OK')"
+          python -c "from inference.diagnostic_probe_generator import DiagnosticProbeGenerator; print('DiagnosticProbeGenerator OK')"
+
+
+      # ==========================================
+      # RUN EXPERIMENT 024
+      # ==========================================
+
+      - name: Run MARS Experiment 024
+        run: python -m experiments.test_buyer_world_model
